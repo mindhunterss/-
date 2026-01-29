@@ -1,0 +1,756 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>陕药兴庆党支部 | 智慧党建</title>
+    <style>
+        :root {
+            --brand-red: #da251c;
+            --brand-dark: #b71c1c;
+            --brand-gold: #ffca28;
+            --bg-gray: #f2f4f8;
+            --text-main: #333;
+            --white: #ffffff;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- UI 组件 --- */
+        .logo-circle {
+            width: 80px; height: 80px;
+            border-radius: 50%; border: 3px solid white;
+            background: white; object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-full {
+            width: 100%; background: var(--brand-red); color: white;
+            padding: 12px; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: bold; margin-top: 10px;
+        }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--brand-red); color: var(--brand-red);
+        }
+        .btn-small { padding: 4px 10px; font-size: 12px; border-radius: 4px; border:none; color:white; cursor: pointer;}
+        .btn-green { background: #28a745; }
+        .btn-red { background: #dc3545; }
+        .btn-blue { background: #007bff; }
+
+        /* --- 登录层 --- */
+        #auth-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #8E0E00 0%, #1F1C18 100%);
+            z-index: 999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .auth-card {
+            background: white; width: 100%; max-width: 340px;
+            border-radius: 16px; padding: 30px 20px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .form-input {
+            width: 100%; padding: 12px; border: 1px solid #ddd;
+            border-radius: 8px; margin-bottom: 15px; outline: none;
+        }
+        .form-textarea {
+            width: 100%; padding: 12px; border: 1px solid #ddd;
+            border-radius: 8px; margin-bottom: 15px; outline: none; resize: vertical; min-height: 80px;
+        }
+
+        /* --- 主应用 --- */
+        #app-layer { display: none; flex: 1; flex-direction: column; height: 100%; overflow: hidden; }
+        
+        .app-header {
+            background: var(--brand-red); padding: 15px; color: white;
+            display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .content-scroll { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
+
+        .card {
+            background: white; border-radius: 12px; padding: 15px;
+            margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .section-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; border-left: 4px solid var(--brand-red);
+            padding-left: 10px; font-weight: bold; font-size: 16px;
+        }
+
+        /* --- 列表通用 --- */
+        .list-item { 
+            padding: 12px 0; border-bottom: 1px solid #eee; position: relative;
+        }
+        .list-title { font-size: 15px; font-weight: 500; color: #333; margin-bottom: 4px; }
+        .list-sub { font-size: 12px; color: #999; }
+        .del-btn { position: absolute; right: 0; top: 12px; color: #dc3545; cursor: pointer; padding: 0 5px; font-size: 18px; }
+
+        /* --- 安排 --- */
+        .arrange-item {
+            background: #f8fcfd; border-left: 3px solid #17a2b8; padding: 10px; margin-bottom: 10px; border-radius: 0 4px 4px 0; position: relative;
+        }
+
+        /* --- 详情页 (新闻) --- */
+        .detail-view {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 200; display: flex; flex-direction: column;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        
+        .detail-nav {
+            padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center;
+            background: white; position: sticky; top: 0;
+        }
+        .back-btn { font-size: 24px; margin-right: 15px; cursor: pointer; color: #666; }
+        .detail-content { padding: 20px; overflow-y: auto; line-height: 1.8; color: #444; }
+        .detail-title { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #000; }
+        .detail-meta { font-size: 12px; color: #999; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+
+        /* --- 排行榜 --- */
+        .rank-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+        .rank-num { width: 30px; font-weight: bold; color: #999; font-style: italic; }
+        .rank-item:nth-child(1) .rank-num { color: #FFD700; font-size: 1.2em; }
+        .rank-item:nth-child(2) .rank-num { color: #C0C0C0; font-size: 1.2em; }
+        .rank-item:nth-child(3) .rank-num { color: #B87333; font-size: 1.2em; }
+        .rank-score { margin-left: auto; color: var(--brand-red); font-weight: bold; }
+
+        /* --- 底部导航 --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; background: white;
+            display: flex; justify-content: space-around; padding: 10px 0;
+            border-top: 1px solid #eee; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+        .nav-item { text-align: center; font-size: 10px; color: #999; }
+        .nav-item.active { color: var(--brand-red); font-weight: bold; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+        /* --- 答题 --- */
+        .quiz-opt {
+            background: #f8f9fa; padding: 12px; margin: 8px 0;
+            border-radius: 8px; border: 1px solid #eee;
+        }
+        .quiz-opt.selected { background: #e3f2fd; border-color: #2196f3; }
+        .quiz-opt.correct { background: #d4edda; border-color: #28a745; color: #155724; }
+        .quiz-opt.wrong { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-layer">
+        <img src="logo.png" class="logo-circle" style="margin-bottom: 20px;">
+        <h2 style="color: white; margin: 0 0 5px;">陕药兴庆党支部</h2>
+        <p style="color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 25px;">智慧党建云平台</p>
+        
+        <div id="login-box" class="auth-card">
+            <h3>党员登录</h3>
+            <input type="text" id="l-user" class="form-input" placeholder="用户名/手机号">
+            <input type="password" id="l-pwd" class="form-input" placeholder="密码">
+            <button class="btn-full" onclick="doLogin()">进入系统</button>
+            <p style="font-size:12px; color:#666; margin-top:15px;">
+                没有账号？<span style="color:var(--brand-red); cursor:pointer" onclick="toggleAuth('reg')">立即注册</span>
+            </p>
+        </div>
+
+        <div id="reg-box" class="auth-card hidden">
+            <h3>党员注册申请</h3>
+            <input type="text" id="r-name" class="form-input" placeholder="真实姓名 (如: 张三)">
+            <input type="text" id="r-user" class="form-input" placeholder="设置用户名">
+            <input type="password" id="r-pwd" class="form-input" placeholder="设置密码">
+            <button class="btn-full" onclick="doRegister()">提交申请</button>
+            <p style="font-size:12px; color:#666; margin-top:15px;">
+                已有账号？<span style="color:var(--brand-red); cursor:pointer" onclick="toggleAuth('login')">返回登录</span>
+            </p>
+        </div>
+    </div>
+
+    <div id="app-layer">
+        <div class="app-header">
+            <img src="logo.png" class="logo-circle" style="width: 36px; height: 36px; border-width: 1px;">
+            <div style="flex:1">
+                <div style="font-weight:bold; font-size:16px;">陕药兴庆党支部</div>
+                <div style="font-size:11px; opacity:0.8;">服务经营 · 凝聚力量</div>
+            </div>
+            <div id="header-points" style="font-size:12px; background:rgba(0,0,0,0.2); padding:4px 8px; border-radius:10px;">
+                积分: 0
+            </div>
+        </div>
+
+        <div class="content-scroll">
+            
+            <div id="page-home" class="page-section">
+                <div class="card" style="background: linear-gradient(135deg, #da251c, #ff5252); color: white;">
+                    <div class="section-header" style="border:none; color:white; margin-bottom:5px;">
+                        <span>📅 党史上的今天</span>
+                        <span id="today-date" style="font-size:12px; opacity:0.8"></span>
+                    </div>
+                    <p id="daily-fact" style="font-size:14px; line-height:1.5; margin:0; opacity:0.95;">正在获取云端数据...</p>
+                </div>
+
+                <div class="card">
+                    <div class="section-header">
+                        <span>🗓️ 学习工作安排</span>
+                        <button id="btn-add-arrange" class="btn-small btn-blue hidden" onclick="adminAddArrange()">+ 发布</button>
+                    </div>
+                    <div id="arrange-list">
+                        </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-header">
+                        <span>📰 支部动态</span>
+                        <button id="btn-add-news" class="btn-small btn-green hidden" onclick="adminAddNews()">+ 发布</button>
+                    </div>
+                    <div id="news-list"></div>
+                </div>
+
+                <div class="card">
+                    <div class="section-header">
+                        <span>📚 本月学习计划</span>
+                        <button id="btn-add-plan" class="btn-small btn-green hidden" onclick="adminAddPlan()">+ 添加</button>
+                    </div>
+                    <div id="plan-list"></div>
+                </div>
+
+                <div class="card">
+                    <div class="section-header" style="border-left-color: #ff9800;">
+                        <span>📫 党员意见箱</span>
+                    </div>
+                    <div style="padding: 5px 0;">
+                        <textarea id="suggestion-input" class="form-textarea" placeholder="请在此输入您的建议或意见（支持匿名）..."></textarea>
+                        <button class="btn-full" style="background:#ff9800; margin-top:0;" onclick="submitSuggestion()">提交意见</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-quiz" class="page-section hidden">
+                <div class="card">
+                    <div class="section-header">
+                        <span>📝 每日党建竞答</span>
+                        <span style="font-size:12px; color:#666">共10题</span>
+                    </div>
+                    
+                    <div id="quiz-start-view">
+                        <p style="color:#666; font-size:14px;">每日答题可获取积分，每题10分，满分100分。</p>
+                        <button class="btn-full" onclick="startQuiz()">开始挑战</button>
+                    </div>
+
+                    <div id="quiz-play-view" class="hidden">
+                        <div style="display:flex; justify-content:space-between; font-size:12px; color:#888; margin-bottom:10px;">
+                            <span>进度: <span id="q-progress">1</span>/10</span>
+                            <span>得分: <span id="q-score">0</span></span>
+                        </div>
+                        <div id="q-text" style="font-weight:bold; font-size:16px; margin-bottom:15px;">题目...</div>
+                        <div id="q-options"></div>
+                        <button id="q-next-btn" class="btn-full hidden" onclick="nextQuestion()">下一题</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-rank" class="page-section hidden">
+                <div class="card" style="text-align:center;">
+                    <div style="font-size:40px; margin-bottom:5px;">🎖️</div>
+                    <h3 id="my-name" style="margin:5px 0;">加载中...</h3>
+                    <p id="my-role" style="color:#999; font-size:12px; margin:0;">党员</p>
+                    <div style="display:flex; justify-content:center; gap:20px; margin-top:15px;">
+                        <div>
+                            <div style="font-size:20px; font-weight:bold; color:var(--brand-red)" id="my-points">0</div>
+                            <div style="font-size:11px; color:#999">当前积分</div>
+                        </div>
+                        <div>
+                            <div style="font-size:20px; font-weight:bold; color:#333" id="my-days">0</div>
+                            <div style="font-size:11px; color:#999">学习天数</div>
+                        </div>
+                    </div>
+                    <button class="btn-full btn-outline" style="margin-top:15px;" onclick="doLogout()">退出登录</button>
+                </div>
+
+                <div class="card">
+                    <div class="section-header">📜 学习足迹</div>
+                    <div id="study-log" style="font-size:12px; color:#666; max-height:100px; overflow-y:auto;">
+                        暂无学习记录
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-header">🏆 党员积分光荣榜</div>
+                    <div id="rank-list"></div>
+                </div>
+
+                <div id="admin-panel" class="hidden">
+                    <div class="card" style="border: 1px solid var(--brand-red);">
+                        <div class="section-header" style="color:var(--brand-red)">⚙️ 党员注册审批</div>
+                        <div id="pending-users"></div>
+                    </div>
+                    <div class="card" style="border: 1px solid #ff9800;">
+                        <div class="section-header" style="color:#e65100">📨 意见箱收件</div>
+                        <div id="admin-suggestions" style="font-size:13px; color:#555;">
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="navTo('home', this)">
+                <span class="nav-icon">🏠</span>首页
+            </div>
+            <div class="nav-item" onclick="navTo('quiz', this)">
+                <span class="nav-icon">✍️</span>答题
+            </div>
+            <div class="nav-item" onclick="navTo('rank', this)">
+                <span class="nav-icon">👤</span>我的
+            </div>
+        </div>
+    </div>
+
+    <div id="news-detail-view" class="detail-view hidden">
+        <div class="detail-nav">
+            <span class="back-btn" onclick="closeNewsDetail()">&#10094;</span>
+            <span style="font-weight:bold;">动态详情</span>
+        </div>
+        <div class="detail-content">
+            <div id="detail-title" class="detail-title">标题</div>
+            <div id="detail-meta" class="detail-meta">日期</div>
+            <div id="detail-body">内容...</div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 数据库初始化 (V5: 增加 arrangments, suggestions, 清除示例人名) ---
+        const DB = {
+            users: 'xq_v5_users', 
+            news: 'xq_v5_news',
+            plans: 'xq_v5_plans',
+            logs: 'xq_v5_logs',
+            arrange: 'xq_v5_arrange',     // 新增：安排
+            suggest: 'xq_v5_suggest'      // 新增：意见
+        };
+
+        function initDB() {
+            // 初始化用户：只保留管理员，删除“李明”
+            if(!localStorage.getItem(DB.users)) {
+                localStorage.setItem(DB.users, JSON.stringify([
+                    { name: "管理员", user: "xqyydzb", pwd: "888888", role: "admin", status: "active", score: 0, days: 0 }
+                ]));
+            }
+            if(!localStorage.getItem(DB.news)) {
+                localStorage.setItem(DB.news, JSON.stringify([
+                    { 
+                        id: 1, 
+                        title: "陕药兴庆党支部召开2026年第一季度党员大会", 
+                        date: "2026-01-28", 
+                        content: "内容：学习党的最新文件，部署新一年工作。" 
+                    }
+                ]));
+            }
+            // 初始工作安排
+            if(!localStorage.getItem(DB.arrange)) {
+                localStorage.setItem(DB.arrange, JSON.stringify([
+                    { id: 1, content: "2月5日 14:00 召开全体党员会议（会议室1）" },
+                    { id: 2, content: "2月10日前 提交个人学习心得" }
+                ]));
+            }
+            if(!localStorage.getItem(DB.plans)) {
+                localStorage.setItem(DB.plans, JSON.stringify([
+                    { id: 1, text: "学习《党章》总纲", done: false },
+                    { id: 2, text: "完成本月党费缴纳", done: false }
+                ]));
+            }
+            if(!localStorage.getItem(DB.suggest)) {
+                localStorage.setItem(DB.suggest, JSON.stringify([]));
+            }
+        }
+        initDB();
+
+        function getLS(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
+        function setLS(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+        function getCurrentUser() { return JSON.parse(sessionStorage.getItem('curr_user')); }
+
+        // --- 2. 认证逻辑 ---
+        function toggleAuth(mode) {
+            document.getElementById('login-box').classList.toggle('hidden', mode === 'reg');
+            document.getElementById('reg-box').classList.toggle('hidden', mode === 'login');
+        }
+
+        function doRegister() {
+            const name = document.getElementById('r-name').value;
+            const user = document.getElementById('r-user').value;
+            const pwd = document.getElementById('r-pwd').value;
+            if(!name || !user || !pwd) return alert("请填写完整信息");
+
+            const users = getLS(DB.users);
+            if(users.find(u => u.user === user)) return alert("用户名已存在");
+
+            users.push({ name, user, pwd, role: 'user', status: 'pending', score: 0, days: 1 });
+            setLS(DB.users, users);
+            alert("注册申请已提交！\n请等待管理员审核。");
+            toggleAuth('login');
+        }
+
+        function doLogin() {
+            const user = document.getElementById('l-user').value;
+            const pwd = document.getElementById('l-pwd').value;
+            const users = getLS(DB.users);
+            const target = users.find(u => u.user === user && u.pwd === pwd);
+
+            if (!target) return alert("账号或密码错误");
+            if (target.status === 'pending') return alert("您的账号正在审核中，请联系管理员。");
+
+            sessionStorage.setItem('curr_user', JSON.stringify(target));
+            enterApp(target);
+        }
+
+        function doLogout() {
+            if(confirm("确定退出登录？")) {
+                sessionStorage.removeItem('curr_user');
+                location.reload();
+            }
+        }
+
+        // --- 3. 核心应用 ---
+        function enterApp(user) {
+            document.getElementById('auth-layer').style.display = 'none';
+            document.getElementById('app-layer').style.display = 'flex';
+            
+            // 个人信息
+            document.getElementById('my-name').innerText = user.name + (user.role==='admin'?' (管理员)':'');
+            document.getElementById('my-points').innerText = user.score;
+            document.getElementById('header-points').innerText = "积分: " + user.score;
+            document.getElementById('my-days').innerText = user.days;
+
+            renderDailyFact();
+            renderArranges(); // 渲染工作安排
+            renderNews();
+            renderPlans();
+            renderRank();
+
+            if(user.role === 'admin') {
+                document.getElementById('admin-panel').classList.remove('hidden');
+                document.getElementById('btn-add-news').classList.remove('hidden');
+                document.getElementById('btn-add-plan').classList.remove('hidden');
+                document.getElementById('btn-add-arrange').classList.remove('hidden');
+                renderAdminPanel();
+            }
+        }
+
+        // --- 4. 业务逻辑 ---
+
+        // A. 学习工作安排 (新增)
+        function renderArranges() {
+            const list = getLS(DB.arrange);
+            const curUser = getCurrentUser();
+            const isAdmin = curUser.role === 'admin';
+
+            const container = document.getElementById('arrange-list');
+            if(list.length === 0) {
+                container.innerHTML = '<div style="color:#999; font-size:12px; padding:10px;">暂无工作安排</div>';
+                return;
+            }
+
+            container.innerHTML = list.map(item => `
+                <div class="arrange-item">
+                    <div style="font-size:14px; font-weight:bold; color:#0056b3;">📌 工作安排</div>
+                    <div style="font-size:14px; margin-top:5px;">${item.content}</div>
+                    ${isAdmin ? `<div class="del-btn" onclick="adminDelArrange(${item.id})">×</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        window.adminAddArrange = function() {
+            const content = prompt("发布新的工作安排：");
+            if(content) {
+                const list = getLS(DB.arrange);
+                list.unshift({ id: Date.now(), content });
+                setLS(DB.arrange, list);
+                renderArranges();
+            }
+        }
+
+        window.adminDelArrange = function(id) {
+            if(confirm("确定删除此安排？")) {
+                let list = getLS(DB.arrange);
+                list = list.filter(i => i.id !== id);
+                setLS(DB.arrange, list);
+                renderArranges();
+            }
+        }
+
+        // B. 意见箱 (新增)
+        window.submitSuggestion = function() {
+            const input = document.getElementById('suggestion-input');
+            const val = input.value.trim();
+            if(!val) return alert("请输入内容");
+            
+            const list = getLS(DB.suggest);
+            const user = getCurrentUser();
+            const date = new Date().toLocaleString();
+            
+            list.unshift({ id: Date.now(), user: user.name, content: val, date });
+            setLS(DB.suggest, list);
+            
+            alert("意见提交成功！感谢您的建议。");
+            input.value = "";
+            
+            // 如果是管理员，实时刷新后台列表
+            if(user.role === 'admin') renderAdminSuggestions();
+        }
+
+        function renderAdminSuggestions() {
+            const list = getLS(DB.suggest);
+            const container = document.getElementById('admin-suggestions');
+            if(list.length === 0) {
+                container.innerHTML = '<div style="padding:10px; color:#999;">暂无意见</div>';
+                return;
+            }
+            container.innerHTML = list.map(s => `
+                <div style="padding:10px; border-bottom:1px solid #eee;">
+                    <div style="color:#333; margin-bottom:5px;">${s.content}</div>
+                    <div style="font-size:11px; color:#999;">
+                        提交人: ${s.user} | 时间: ${s.date}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // C. 动态新闻 & 详情
+        function renderNews() {
+            const list = getLS(DB.news);
+            document.getElementById('news-list').innerHTML = list.map(item => `
+                <div class="list-item" onclick="viewNews(${item.id})">
+                    <div class="list-title">${item.title}</div>
+                    <div class="list-sub">${item.date}</div>
+                </div>
+            `).join('');
+        }
+
+        window.viewNews = function(id) {
+            const list = getLS(DB.news);
+            const item = list.find(i => i.id === id);
+            if(item) {
+                document.getElementById('detail-title').innerText = item.title;
+                document.getElementById('detail-meta').innerText = "发布时间: " + item.date;
+                document.getElementById('detail-body').innerHTML = item.content.replace(/\n/g, '<br>');
+                document.getElementById('news-detail-view').classList.remove('hidden');
+            }
+        }
+        window.closeNewsDetail = function() { document.getElementById('news-detail-view').classList.add('hidden'); }
+
+        window.adminAddNews = function() {
+            const title = prompt("1. 输入标题");
+            if(!title) return;
+            const content = prompt("2. 输入正文内容");
+            if(!content) return;
+            const list = getLS(DB.news);
+            list.unshift({ id: Date.now(), title, date: new Date().toISOString().split('T')[0], content });
+            setLS(DB.news, list);
+            renderNews();
+        }
+
+        // D. 学习计划
+        function renderPlans() {
+            const list = getLS(DB.plans);
+            const isAdmin = getCurrentUser().role === 'admin';
+            document.getElementById('plan-list').innerHTML = list.map(item => `
+                <div class="list-item" style="display:flex; align-items:center;">
+                    <div style="flex:1; display:flex; align-items:center;" onclick="togglePlan(${item.id})">
+                        <div style="width:16px; height:16px; border:2px solid #ddd; border-radius:50%; margin-right:10px;" id="plan-icon-${item.id}"></div>
+                        <div id="plan-text-${item.id}" style="font-size:14px;">${item.text}</div>
+                    </div>
+                    ${isAdmin ? `<div class="del-btn" onclick="adminDelPlan(${item.id})">×</div>` : ''}
+                </div>
+            `).join('');
+        }
+        window.togglePlan = function(id) {
+            const el = document.getElementById('plan-text-'+id);
+            if(el.style.textDecoration !== 'line-through') {
+                el.style.textDecoration = 'line-through';
+                el.style.color = '#999';
+                document.getElementById('plan-icon-'+id).style.background = '#ccc';
+                addLog("完成了学习计划");
+            }
+        };
+        window.adminAddPlan = function() {
+            const text = prompt("新增计划内容：");
+            if(text) {
+                const list = getLS(DB.plans);
+                list.unshift({ id: Date.now(), text, done: false });
+                setLS(DB.plans, list);
+                renderPlans();
+            }
+        }
+        window.adminDelPlan = function(id) {
+            if(confirm("删除此计划？")) {
+                let list = getLS(DB.plans);
+                list = list.filter(i => i.id !== id);
+                setLS(DB.plans, list);
+                renderPlans();
+            }
+        }
+
+        // --- 管理员审批 ---
+        function renderAdminPanel() {
+            // 1. 审批列表
+            const users = getLS(DB.users);
+            const pending = users.filter(u => u.status === 'pending');
+            const pBox = document.getElementById('pending-users');
+            if(pending.length === 0) pBox.innerHTML = "<div style='color:#ccc; font-size:12px; padding:10px;'>无待审核申请</div>";
+            else {
+                pBox.innerHTML = pending.map(u => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                        <div><strong>${u.name}</strong></div>
+                        <div>
+                            <button class="btn-small btn-green" onclick="approveUser('${u.user}')">批准</button>
+                            <button class="btn-small btn-red" onclick="rejectUser('${u.user}')">拒绝</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            // 2. 刷新意见箱
+            renderAdminSuggestions();
+        }
+        window.approveUser = function(u) {
+            const users = getLS(DB.users);
+            const target = users.find(x => x.user === u);
+            if(target) { target.status = 'active'; setLS(DB.users, users); renderAdminPanel(); }
+        }
+        window.rejectUser = function(u) {
+            if(confirm("拒绝并删除？")) {
+                let users = getLS(DB.users);
+                users = users.filter(x => x.user !== u);
+                setLS(DB.users, users);
+                renderAdminPanel();
+            }
+        }
+
+        // --- 其他功能 ---
+        function renderDailyFact() {
+            const facts = ["中共一大召开", "南昌起义", "遵义会议", "新中国成立", "改革开放", "建党百年"];
+            const idx = new Date().getDate() % facts.length;
+            document.getElementById('daily-fact').innerText = "💡 历史上的今天：" + facts[idx];
+        }
+
+        function renderRank() {
+            let users = getLS(DB.users);
+            // 排除待审核，按分排序
+            users = users.filter(u => u.status === 'active').sort((a,b) => b.score - a.score);
+            
+            const container = document.getElementById('rank-list');
+            if(users.length === 0) {
+                container.innerHTML = "<div style='padding:10px; color:#999'>暂无数据</div>";
+                return;
+            }
+
+            container.innerHTML = users.map((u, idx) => `
+                <div class="rank-item">
+                    <div class="rank-num">${idx + 1}</div>
+                    <div style="margin-left:10px;">
+                        <div style="font-size:14px; font-weight:bold;">${u.name}</div>
+                        <div style="font-size:10px; color:#999;">${u.role==='admin'?'书记':'党员'}</div>
+                    </div>
+                    <div class="rank-score">${u.score}分</div>
+                </div>
+            `).join('');
+        }
+
+        function addLog(action) {
+            let users = getLS(DB.users);
+            let curr = getCurrentUser();
+            const idx = users.findIndex(u => u.user === curr.user);
+            users[idx].score += 2; users[idx].days += 1; // 简单增加天数
+            setLS(DB.users, users);
+            sessionStorage.setItem('curr_user', JSON.stringify(users[idx]));
+            
+            // 刷新UI
+            document.getElementById('my-points').innerText = users[idx].score;
+            document.getElementById('header-points').innerText = "积分: " + users[idx].score;
+            const logDiv = document.getElementById('study-log');
+            logDiv.innerHTML = `<div>[${new Date().toLocaleTimeString()}] ${action} (+2分)</div>` + logDiv.innerHTML;
+        }
+
+        // 答题
+        const QS = [
+            { q: "党的根本宗旨？", o: ["为人民服务", "赚钱"], a: 0 },
+            { q: "建党年份？", o: ["1919", "1921"], a: 1 },
+            { q: "两学一做的一做是？", o: ["做合格党员", "做生意"], a: 0 },
+            { q: "四个自信不包括？", o: ["文化自信", "盲目自信"], a: 1 },
+            { q: "三会一课？", o: ["党课", "网课"], a: 0 },
+            { q: "最高理想？", o: ["共产主义", "世界首富"], a: 0 },
+            { q: "党徽图案？", o: ["镰刀锤头", "五星"], a: 0 },
+            { q: "入党誓词？", o: ["永不叛党", "永不加班"], a: 0 },
+            { q: "二十大召开于？", o: ["2022", "2023"], a: 0 },
+            { q: "长征结束于？", o: ["甘肃会宁", "延安"], a: 0 }
+        ];
+        let qState = { idx: 0, score: 0 };
+        window.startQuiz = function() {
+            qState.idx = 0; qState.score = 0;
+            document.getElementById('quiz-start-view').classList.add('hidden');
+            document.getElementById('quiz-play-view').classList.remove('hidden');
+            renderQ();
+        }
+        function renderQ() {
+            const q = QS[qState.idx];
+            document.getElementById('q-progress').innerText = qState.idx + 1;
+            document.getElementById('q-score').innerText = qState.score;
+            document.getElementById('q-text').innerText = `${qState.idx+1}. ${q.q}`;
+            document.getElementById('q-next-btn').classList.add('hidden');
+            const div = document.getElementById('q-options');
+            div.innerHTML = '';
+            q.o.forEach((opt, i) => {
+                const btn = document.createElement('div');
+                btn.className = 'quiz-opt';
+                btn.innerText = opt;
+                btn.onclick = () => checkQ(i, btn, q.a);
+                div.appendChild(btn);
+            });
+        }
+        function checkQ(sel, el, ans) {
+            document.querySelectorAll('.quiz-opt').forEach(o=>o.style.pointerEvents='none');
+            if(sel===ans) { el.classList.add('correct'); qState.score+=10; }
+            else { el.classList.add('wrong'); document.querySelectorAll('.quiz-opt')[ans].classList.add('correct'); }
+            document.getElementById('q-next-btn').classList.remove('hidden');
+        }
+        window.nextQuestion = function() {
+            qState.idx++;
+            if(qState.idx < QS.length) renderQ();
+            else {
+                alert(`答题结束！得分: ${qState.score}`);
+                let users = getLS(DB.users);
+                let curr = getCurrentUser();
+                const idx = users.findIndex(u => u.user === curr.user);
+                users[idx].score += qState.score;
+                setLS(DB.users, users);
+                sessionStorage.setItem('curr_user', JSON.stringify(users[idx]));
+                enterApp(users[idx]);
+                document.getElementById('quiz-start-view').classList.remove('hidden');
+                document.getElementById('quiz-play-view').classList.add('hidden');
+                navTo('rank', document.querySelectorAll('.nav-item')[2]);
+            }
+        }
+        window.navTo = function(page, el) {
+            document.querySelectorAll('.page-section').forEach(p=>p.classList.add('hidden'));
+            document.getElementById('page-'+page).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+</body>
+</html>
